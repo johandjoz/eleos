@@ -6,9 +6,23 @@
 const {ipcRenderer} = require("electron");
 const {clipboard} = require('electron');
 let tableify = require("tableify");
+var once = false;
 
 let memos = [], options = [], oldOptions = [], privTxs = [], shieldedOpts = [], transOpts = [], txs = [];
 let genHistory = {"transparent": false, "private": false};
+
+function openPage(pageName) {
+          if (document.getElementById("alertSpan").innerHTML.length < 2) {
+              let i;
+              let x = document.getElementsByClassName("content-wrapper");
+              for (i = 0; i < x.length; i++) {
+                  x[i].style.display = "none";
+              }
+              document.getElementById(pageName).style.display = "flex";
+          } else {
+              setActiveNav(document.getElementById("dashboardTab"));
+          }
+      }
 	
 function hexToString(s) {
     let str = "";
@@ -18,8 +32,6 @@ function hexToString(s) {
     }
     return str;
 }
-
-
 
 function generateQuery(method, params) {
     let jsonObject;
@@ -50,6 +62,8 @@ function format (txid) {
             '<tr><td>' + obj.txid + '</td>' +
         '</tr><tr><th>Blockhash</th></tr><tr><td>' + obj.blockhash + '</td></tr></table>';
 }
+
+
 
 function generateMemoTable(memos) {
     let localMemos = memos;
@@ -133,7 +147,7 @@ function generateMemoTable(memos) {
 	
 	    // Add event listener for opening and closing details
 		$(document).ready(function () {
-    $('#transactionsTable tbody').on('click', 'td.details-control', function () {
+    $('#memoTable tbody').on('click', 'td.details-control', function () {
 		var getTable = $('#memoTable').DataTable();
         var tr = $(this).closest('tr');
         var row = getTable.row(tr);
@@ -194,6 +208,7 @@ function generateHistoryTable(txs, privTxs, override) {
 	
     let combinedTxs = [].concat(txs, privTxs);
 	var totalTxs = combinedTxs.length - 1;
+	if(totalTxs > 0){
 	localStorage.zclLastTX =  combinedTxs[totalTxs].txid;
     combinedTxs.sort(function (a, b) {
         if (b.time === a.time) {
@@ -201,6 +216,7 @@ function generateHistoryTable(txs, privTxs, override) {
         }
         return b.time - a.time;
     });
+	}
     for (let i = 0; i < privTxs.length; i++) {
         privTxs[i].address = privTxs[i].address.substr(0, 16) + "......" + privTxs[i].address.substr(-16);
     }
@@ -222,7 +238,11 @@ function generateHistoryTable(txs, privTxs, override) {
 							let td = tr.insertCell(-1);
 							let getProp = heading[x].toLowerCase();
 							if(heading[x] != "Time" && heading[x] != ""){
+								if(getProp == "address" && !combinedTxs[i][getProp]){
+									td.innerHTML = "Private Address";
+								} else {
 							td.innerHTML = combinedTxs[i][getProp];
+								}
 							}  else if(heading[x] ==  "Time") {
 								let datetime = new Date(combinedTxs[i].time * 1000);
 								combinedTxs[i].time = datetime;
@@ -285,9 +305,14 @@ function generateHistoryTable(txs, privTxs, override) {
 
 		    var combinedTxs = [].concat(txs, privTxs);
 			var getLastTX = generateQuerySync("gettransaction", [localStorage.zclLastTX]);
+
 			var result = $.grep(combinedTxs, function(e){ return e.time > getLastTX.result.time})
 			if(result.length > 0){
+				if(getLastTX.result.vjoinsplit.length > 0){
+					localStorage.zclLastTX = result[0].txid;
+				} else {
 					generateHistoryTable(txs, privTxs, true);
+				}
 			}
 	
 }
@@ -301,6 +326,10 @@ ipcRenderer.on("jsonQuery-reply", (event, arg) => {
     }
     else {
         document.getElementById("alertSpan").innerHTML = "";
+		if(once == false){
+		openPage("dashboardPage");
+		once = true;
+		}
     }
 	
 		    if (arg.id === "getinfo" && arg.result) {
@@ -351,33 +380,48 @@ ipcRenderer.on("jsonQuery-reply", (event, arg) => {
         }
         genHistory.transparent = true;
     }
-    else if (arg.id === "listaddressgroupings" && arg.result) {
+    else if (arg.id === "listreceivedbyaddress" && arg.result) {
         let table = [];
         let ctr = 0;
-        for (let i = 0; i < arg.result.length; i++) {
-            for (let n = 0; n < arg.result[i].length; n++) {
-                table[ctr] = {'Transparent Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Transparent Address" onclick="getNewTransparentAddress()">&nbsp;<i class="fa fa-plus-circle" style="color:green"></i></a>': arg.result[i][n][0] + '&nbsp;<a href="#" title="Copy Address To Clipboard" onclick="copyAddress(\'' + arg.result[i][n][0] + '\')"><i class="fa fa-clipboard" style="color:#c87035"></i></a>', "Amount": arg.result[i][n][1]};
+			
+			
+			for(var x = 0; x < arg.result.length; x++){
+				var total = 0;
+				var getUnspent =  generateQuerySync("listunspent", [0, 9999999, [arg.result[x].address]]);
+				for(var i = 0; i < getUnspent.result.length; i++){
+					total = total + getUnspent.result[i].amount
+				}
+				arg.result[x].amount = total;
+		
+			}
+		
+		var byAmount = arg.result.slice(0);
+			byAmount.sort(function(a,b) {
+			return b.amount - a.amount;
+			});
+		
+        for (let i = 0; i < byAmount.length; i++) {
+                table[ctr] = {'Transparent Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Transparent Address" onclick="getNewTransparentAddress()">&nbsp;<i class="fa fa-plus-circle" style="color:green"></i></a>': byAmount[i].address, '<p class="text-center">Amount</p>': '<p class="text-center">' + byAmount[i].amount + '</p>','<p class="text-center">Actions</p>':'<div class="text-center"><a href="#" title="Copy Address To Clipboard" onclick="copyAddress(\'' + byAmount[i].address + '\')"><i class="fa fa-clipboard" style="color:#c87035"></i></a>&nbsp;&nbsp;<a href="#" title="Export Private Key" onclick="copyPrivKey(\'' + byAmount[i].address + '\')"><i class="fa fa-download" style="color:#c87035"></i></span>' }
                 ctr += 1;
                 let option = document.createElement("option");
-                option.text = arg.result[i][n][0] + " (" + arg.result[i][n][1] + ")";
-                option.value = arg.result[i][n][0];
+                option.text = byAmount[i].address + " (" + byAmount[i].amount + ")";
+                option.value = byAmount[i].address;
                 let pushed = false;
                 for (let x = 0; x < transOpts.length; x++) {
                     if (transOpts[x].value === option.value) {
-                        if (arg.result[i][n][1] > 0) {
+                        if (byAmount[i].amount > 0) {
                             transOpts[x] = option;
                             pushed = true;
-                        } else if (arg.result[i][n][1] === 0) {
+                        } else if (byAmount[i].amount === 0) {
                             transOpts.splice(x, 1);
                             pushed = true;
                         }
                         break;
                     }
                 }
-                if ((pushed === false) && (arg.result[i][n][1] > 0)) {
+                if ((pushed === false) && (byAmount[i].amount > 0)) {
                     transOpts.push(option);
                 }
-            }
         }
         // build empty table if no results
         if (arg.result.length < 1) {
@@ -394,14 +438,20 @@ ipcRenderer.on("jsonQuery-reply", (event, arg) => {
     else if (arg.id === "z_listaddresses" && arg.result) {
         let table = [];
         let ctr = 0;
-        for (let i = 0; i < arg.result.length; i++) {
-            let res = generateQuerySync("z_getbalance", [arg.result[i], 0]);
-            table[ctr] = {'Private Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Private Address" onclick="getNewPrivateAddress()">&nbsp;<i class="fa fa-plus-circle" style="color:green"></i></a>': arg.result[i] + '&nbsp;<a href="#" title="Copy Address To Clipboard" onclick="copyAddress(\'' + arg.result[i] + '\')"><i class="fa fa-clipboard" style="color:#c87035"></i></a>', "amount": res.result};
+		
+				var byAmount = arg.result.slice(0);
+			byAmount.sort(function(a,b) {
+			return b.amount - a.amount;
+			});
+		
+        for (let i = 0; i < byAmount.length; i++) {
+            let res = generateQuerySync("z_getbalance", [byAmount[i], 0]);
+            table[ctr] = {'Private Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Private Address" onclick="getNewPrivateAddress()">&nbsp;<i class="fa fa-plus-circle" style="color:green"></i></a>': '<div class="truncate-ellipsis"><span>' + byAmount[i] + '</span></div>', '<p class="text-center">Amount</p>': '<p class="text-center">' + res.result + '</p>','<p class="text-center">Actions</p>':'<div class="text-center"><a href="#" title="Copy Address To Clipboard" onclick="copyAddress(\'' + byAmount[i] + '\')"><i class="fa fa-clipboard" style="color:#c87035"></i></a>&nbsp;&nbsp;<a href="#" title="Export Private Key" onclick="copyZPrivKey(\'' + byAmount[i] + '\')"><i class="fa fa-download" style="color:#c87035"></i></div>'};
             ctr += 1;
             if (res.result > 0) {
                 let option = document.createElement("option");
-                option.text = arg.result[i] + " (" + res.result + ")";
-                option.value = arg.result[i];
+                option.text = byAmount[i] + " (" + res.result + ")";
+                option.value = byAmount[i];
                 let pushed = false;
                 for (let x = 0; x < shieldedOpts.length; x++) {
                     if (shieldedOpts[x].value === option.value) {
@@ -415,8 +465,8 @@ ipcRenderer.on("jsonQuery-reply", (event, arg) => {
             }
         }
         // build empty table if no results
-        if (arg.result.length < 1) {
-            table[0] = {'Private Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Private Address" onclick="getNewPrivateAddress()"><i class="fa fa-plus-circle" style="color:green"></i></a>': "No addresses with received balances found", "amount": 0};
+        if (byAmount.length < 1) {
+            table[0] = {'Private Address <a href="#" data-toggle="tooltip" data-placement="top" title="New Private Address" onclick="getNewPrivateAddress()"><i class="fa fa-plus-circle" style="color:green"></i></a>': "No addresses with received balances found", "<p class='text-center'>Amount</p>": '<p class="text-center">0</p>'};
         }
         let tableElement = tableify(table);
         let div = document.createElement("div");
@@ -572,6 +622,7 @@ setInterval(pollUI, 1000);
 
 
 module.exports = {
+
     generateQuerySync: function (method, params) {
         return generateQuerySync(method, params);
     },
@@ -583,5 +634,8 @@ module.exports = {
     },
     saveOpts: function (opts) {
         ipcRenderer.send("save-opts", opts);
-    }
+    },
+	openPage: function(pageName){
+		return openPage(pageName);
+	}
 };

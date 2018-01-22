@@ -32,6 +32,8 @@
 	body {
 		-webkit-text-size-adjust: none;
 	}
+	
+
 
 /* Box Model */
 
@@ -309,8 +311,6 @@ tr.shown td.details-control {
 				}
 
 			}
-
-
 
 	
 	#alertSpan {

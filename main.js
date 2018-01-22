@@ -165,7 +165,7 @@ function checkCoinConfig(callback) {
 			"addnode=188.166.136.203",
 			"addnode=159.89.198.93"
 		];
-		fs.writeFileSync(getAppDataDir() + zclPath + "/zclassic.conf", data.join("\n"));
+		fs.writeFileSync(getAppDataDir() + zclPath + "/zclassic.conf", data.join("\r\n"));
     }
 
     if (typeof callback === "function") {
@@ -356,7 +356,7 @@ function createWindow() {
                         console.log("Version: " + pjs.version);
                         dialog.showMessageBox(null, {
                             type: "info",
-                            title: "Eleos version",
+                            title: "Eleos Version",
                             message: "Version: " + pjs.version
                         });
                     }
@@ -407,10 +407,10 @@ function createWindow() {
     Menu.setApplicationMenu(menu);
 	
     mainWindow = new BrowserWindow({
-        "minWidth": 1200,
-        "minHeight": 750,
+        "minWidth": 775,
+        "minHeight": 600,
         "width": 1200,
-        "height": 750,
+        "height": 775,
     });
 	
     mainWindow.loadURL(url.format({
@@ -419,7 +419,7 @@ function createWindow() {
         slashes: true
     }));
 
-    //mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on("closed", function () {
         mainWindow = null;

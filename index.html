@@ -12,6 +12,8 @@
     <link href="assets/css/font-awesome.min.css" rel="stylesheet">
     <link href='http://fonts.googleapis.com/css?family=Roboto:400,700,300|Material+Icons' rel='stylesheet' type='text/css'>
 	<link rel="stylesheet" type="text/css" href="assets/css/datatables.min.css"/> 
+	<link rel="stylesheet" href="node_modules/smalltalk/dist/smalltalk.min.css">
+
 
 	</head>
 	<body>
@@ -60,7 +62,21 @@
             </div>
         </div>
         <div class="main-panel">
-            <div class="content">
+            <nav class="navbar navbar-transparent navbar-absolute">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+						<a href="http://zclassic.org/" onclick="launchZclassicOrg()" class="navbar-brand navbar-toggle" style="width:200px; float:left;">ZClassic Eleos Wallet</a>
+                    </div>
+
+                </div>
+            </nav>
+			            <div class="content">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-lg-4 col-md-4 col-sm-4">
@@ -152,7 +168,7 @@
                         <div class="form-group">
                             <label for="privateFromField">From</label><select class="form-control" id="privateFromSelect" title="privateFromSelect"></select>
                             <label for="privateSendToField">Send To</label><input class="form-control" type="text" id="privateSendToValue" title="privateSendToValue"/>
-                            <label for="privateAmountField">Amount <span>(Fee 0.0001)</span></label><input class="form-control" placeholder="0.0001" type="number" id="privateAmountValue" title="privateAmountValue"/>
+                            <label for="privateAmountField">Amount <span>(Fee 0.0001)</span></label><input class="form-control" step="1" type="number" id="privateAmountValue" title="privateAmountValue"/>
                             <label for="privateMemoField">Encrypted Memo <span>(optional)</span></label><input class="form-control" type="text" id="privateMemoValue" title="privateMemoValue"/>
                         </div>
                         <div class="form-group">
@@ -166,6 +182,7 @@
 			<section id="addressesPage" class="content-wrapper">
 				<div class="inner">
 				<div class="row">
+					<div class="col-md-12">
 				<div class="card">
                                 <div class="card-header" data-background-color="orange">
                                     <h4 class="title">Transparent Addresses</h4>
@@ -175,6 +192,8 @@
 					</div>
 					</div>
 				</div>
+				</div>
+				<div class="col-md-12">
 				<div class="row">
 								<div class="card">
                                 <div class="card-header" data-background-color="orange">
@@ -185,7 +204,9 @@
 					</div>
 					</div>
 					</div>
-					<button type="button" class="btn btn-sm btn-primary" id="getPrivateKey" onclick="getPrivateKey()">Save Private Key</button>
+					</div>
+					<button type="button" class="btn btn-sm btn-primary" id="getPrivateKey" onclick="getPrivateKey()">Save All Private Keys To File</button>
+					<button type="button" class="btn btn-sm btn-primary" id="importPrivateKey" onclick="importPrivateKey()">Import Private Key</button>
 
 </div>
 			</section>
@@ -196,9 +217,19 @@
             </div>
         </div>
     </div>
+	</div>
   </body>
 
-
+  <!-- Insert this line above script imports  -->
+<script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+       <script src="assets/js/jquery-3.2.1.min.js"></script>
+	  <script type="text/javascript" src="assets/js/datatables.min.js"></script>
+	  <script src="assets/js/bootstrap.min.js" type="text/javascript"></script>
+	  <script type="text/javascript" src="assets/js/bootstrap-notify.min.js"></script>
+	  <script type="text/javascript" src="assets/js/perfect-scrollbar.jquery.min.js"></script>
+	  <script text="text/javascript" src="assets/js/material-dashboard.js?v=1.2.0"></script>
+<!-- Insert this line after script imports -->
+<script>if (window.module) module = window.module;</script>
   <script>
   
 	function launchZclassicOrg() {
@@ -206,24 +237,12 @@
 		event.preventDefault();
 		shell.openExternal('http://zclassic.org/');
     }
-
-	const renderer = require('./renderer.js');
-
-      function openPage(pageName) {
-          if (document.getElementById("alertSpan").innerHTML.length < 2) {
-              let i;
-              let x = document.getElementsByClassName("content-wrapper");
-              for (i = 0; i < x.length; i++) {
-                  x[i].style.display = "none";
-              }
-              document.getElementById(pageName).style.display = "flex";
-          } else {
-              setActiveNav(document.getElementById("dashboardTab"));
-          }
+	
+	function openPage(pageName) {
+		renderer.openPage(pageName);
       }
-	  
 
-
+	const renderer = require('./renderer.js')
 	  
       function setActiveNav(element) {
           for (let i = 0; i < document.getElementsByClassName('navLink').length; i++) {
@@ -303,15 +322,67 @@
 		}
 		
 		$.notify({
-	icon: 'fa fa-clipboard',
-	message: "Your " + addressType + " address has been copied to clipboard:<br/><b>" + address + "</b>"
+	message: "<i class='fa fa-clipboard fa-3x' style='float:right'></i> Your " + addressType + " address has been copied to clipboard:<br/><span style='100px; word-wrap:break-word;'><b>" + address + "</span></b>"
 	},{
 	allow_dismiss: false,
-	type: 'warning'
+	type: 'warning',
+	delay:5000
 });
 	
 	
 	  }
+	  
+	function importPrivateKey(){
+	var smalltalk = require("smalltalk");
+	smalltalk.prompt('Import Private Key', 'Please Enter Your Private Key', '')
+	.then((value) => {
+		var privateKey = value;
+				if(!privateKey){
+			
+			$.notify({
+		message: "<i class='fa fa-times-circle-o fa-4x' style='float:right'></i> <h3>No Private Key Received</h3>"
+	},{
+		allow_dismiss: false,
+		delay:5000,
+		type: 'warning'
+});      
+		} else {
+			var res = renderer.generateQuerySync("importprivkey", [privateKey]);
+			if(res.error){
+				var res = renderer.generateQuerySync("z_importkey", [privateKey]);
+					if(res.error){
+						smalltalk
+    .alert('Error', 'Sorry, your private key could not be imported.')
+    .then(() => {
+        console.log('Dismiss');
+    });
+					} else {
+							$.notify({
+	message: "<i class='fa fa- fa-check-square fa-4x' style='float:right'></i> <h3>Your private key was successfully imported</h3>"
+	},{
+	allow_dismiss: false,
+	type: 'success',
+	delay:5000
+});
+					}
+				
+			} else {
+			
+			$.notify({
+	message: "<i class='fa fa- fa-check-square fa-4x' style='float:right'></i> <h3>Your private key was successfully imported</h3>"
+	},{
+	allow_dismiss: false,
+	type: 'success',
+	delay:5000
+});
+			}
+			
+		}
+	});
+			
+
+
+	}
 	  
       function getNewTransparentAddress() {
           var newTransparentAddress = renderer.generateQuerySync('getnewaddress', []).result;
@@ -321,14 +392,14 @@
 		aux.select();
 		document.execCommand("copy");
 		document.body.removeChild(aux);
-				$.notify({
-	icon: 'fa fa-clipboard',
-	message: "New transparent address has been copied to clipboard: <br/>" + newTransparentAddress
+	$.notify({
+		title: "<i class='fa fa-clipboard fa-3x' style='float:right'></i> <strong>Address Created and Copied To Clipboard</strong>",
+		message: newTransparentAddress
 	},{
 		allow_dismiss: false,
-
-	type: 'warning'
-});
+	type: 'warning',
+	delay:5000
+});    
       }
       function getNewPrivateAddress() {
           var newPrivateAddress = renderer.generateQuerySync('z_getnewaddress', []).result;
@@ -339,12 +410,54 @@
 		document.execCommand("copy");
 		document.body.removeChild(aux);
 				$.notify({
-	icon: 'fa fa-clipboard',
-	message: "New private address has been copied to clipboard: <br/>" + newPrivateAddress
+	title: "<i class='fa fa-clipboard fa-3x' style='float:right'></i> <strong>Address Created and Copied To Clipboard</strong>",
+	message: newPrivateAddress
 	},{
 		allow_dismiss: false,
-	type: 'warning'
-});      }
+	type: 'warning',
+	delay:5000
+});    
+  }
+
+	function copyPrivKey(address){
+		var pKey = renderer.generateQuerySync("dumpprivkey", [address]);
+var aux = document.createElement("input");
+		aux.setAttribute("value", pKey.result);
+		document.body.appendChild(aux);
+		aux.select();
+		document.execCommand("copy");
+		document.body.removeChild(aux);
+				$.notify({
+	title: "<i class='fa fa-clipboard fa-3x' style='float:right'></i> <strong>Private Key Copied To Clipboard</strong>",
+	message: pKey.result
+	},{
+		allow_dismiss: false,
+		delay:5000,
+		type: 'warning'
+});      
+}
+
+	function copyZPrivKey(address){
+		var pKey = renderer.generateQuerySync("z_exportkey", [address]);
+var aux = document.createElement("input");
+		aux.setAttribute("value", pKey.result);
+		document.body.appendChild(aux);
+		aux.select();
+		document.execCommand("copy");
+		document.body.removeChild(aux);
+$.notify({
+	title: "<i class='fa fa-clipboard fa-3x' style='float:right'></i> <strong>Private Key Copied To Clipboard</strong>",
+	message: pKey.result
+	},{
+		allow_dismiss: false,
+		delay:5000,
+		type: 'warning'
+});      
+}
+
+
+	
+
 	function getPrivateKey() {
 	    const {dialog} = require("electron").remote;
 		const fs = require('fs');
@@ -354,26 +467,23 @@
 		var now = new Date();
 		now = now.toISOString().split('.')[0] + 'Z';
 
-		var fileStr = '# Wallet dump created by eleos\n';
-		fileStr += '# Created on ' + now + '\n\n\n';
+		var fileStr = '# Wallet dump created by eleos\r\n';
+		fileStr += '# Created on ' + now + '\r\n\r\n\r\n';
+		fileStr += 'Address                                                                                               Private Key\r\n\r\n'
 
 		var res = renderer.generateQuerySync("z_listaddresses", []).result;
 		res.forEach(function(key) {
 			var pKey = renderer.generateQuerySync("z_exportkey", [key]);
-			fileStr += pKey.result;
-			fileStr += ' ' + now + ' ' + 'label=' + ' ' + '# addr=' + key;
-			fileStr += '\n';
+			fileStr += key + '   :   ' + pKey.result + '\r\n';
 		});
 		
-		fileStr += '\n';
+		fileStr += '\r\n\r\n';
 		
 		var res = renderer.generateQuerySync("listreceivedbyaddress", [0, true]).result;
 		console.log(res);
 		res.forEach(function(key) {
 			var pKey = renderer.generateQuerySync("dumpprivkey", [key.address]);
-			fileStr += pKey.result;
-			fileStr += ' ' + now + ' ' + 'label=' + ' ' + '# addr=' + key.address;
-			fileStr += '\n';
+			fileStr += key.address + '                                                               :   ' + pKey.result + '\r\n';
 		});
 
 		fs.writeFile(savePath, fileStr, function(err) {
@@ -405,8 +515,7 @@
 			}); 
 			  } else {
 			  				$.notify({
-	icon: 'fa fa-exchange',
-	message: "Successfully transmitted transaction.\n\nTXID: " + arg.result
+	message: "<i class='fa fa-exchange fa-3x' style='float:right'></i> Successfully transmitted transaction.<br/>TXID: " + arg.result
 	},{
 		allow_dismiss: false,
 	type: 'warning'
@@ -416,7 +525,7 @@
           }
           else {
               let memo = stringToHex(document.getElementById("privateMemoValue").value);
-              renderer.generateQuery('z_sendmany', [from, [{'address': address, 'amount': amount, 'memo': memo}]]);
+              let arg = renderer.generateQuery('z_sendmany', [from, [{'address': address, 'amount': amount, 'memo': memo}]]);
 			  if (arg.result === null) {
 			  				$.notify({
 			message: arg.error.message
@@ -426,8 +535,7 @@
 }); 
 			  } else {
 			  $.notify({
-	icon: 'fa fa-exchange',
-	message: "Successfully transmitted transaction.\n\nTXID: " + arg.result
+	message: "<i class='fa fa-exchange fa-3x' style='float:right'></i> Successfully transmitted transaction.<br/>TXID: " + arg.result
 	},{
 		allow_dismiss: false,
 	type: 'warning'
@@ -444,7 +552,6 @@
 		event.preventDefault();
 		shell.openExternal("http://explorer.zclmine.pro/tx/" + txid);
 }
-
 	  
 	  function getFiatValue(){
 	
@@ -478,20 +585,7 @@ getFiatValue();
 setInterval(getFiatValue, 30000);
 
   </script>
-  <!-- Insert this line above script imports  -->
-<script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
-       <script src="assets/js/jquery-3.2.1.min.js"></script>
-	  <script type="text/javascript" src="assets/js/datatables.min.js"></script>
-	  <script type="text/javascript" src="assets/js/bootstrap-notify.min.js"></script>
-	  <script>
-	  	  //Open Home
-	  $( document ).ready(function() {
 
-	  		openPage("dashboardPage");
-			
-			});</script>
-<!-- Insert this line after script imports -->
-<script>if (window.module) module = window.module;</script>
 
 
 </html>

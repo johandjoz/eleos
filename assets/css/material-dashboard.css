@@ -939,10 +939,7 @@ h2.title {
     max-height: 100%;
 }
 
-.main-panel>.content {
-    padding: 30px 15px;
-    min-height: calc(100% - 123px);
-}
+
 
 .main-panel>.footer {
     border-top: 1px solid #e7e7e7;
@@ -2762,12 +2759,13 @@ output {
     background-size: 0 2px, 100% 1px;
     background-repeat: no-repeat;
     background-position: center bottom, center calc(100% - 1px);
-    background-color: transparent;
+    background-color: #e0e0e0;
     transition: background 0s ease-out;
     float: none;
     box-shadow: none;
     border-radius: 0;
     font-weight: 400;
+	padding-left: 10px;
 }
 
 .form-control::-moz-placeholder,
@@ -3369,9 +3367,23 @@ select.form-control[multiple],
     color: #ffffff;
 }
 
+.truncate-ellipsis {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    white-space: nowrap;
+}
+ 
+.truncate-ellipsis > * {
+    display: table-cell;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .alert.alert-warning {
     background-color: #c87035;
     color: #ffffff;
+	width:500px;
     border-radius: 3px;
     box-shadow: 0 12px 20px -10px rgba(255, 152, 0, 0.28), 0 4px 20px 0px rgba(0, 0, 0, 0.12), 0 7px 8px -5px rgba(255, 152, 0, 0.2);
 }
@@ -4362,6 +4374,8 @@ fieldset[disabled] .form-group.is-focused .togglebutton label {
         margin-top: 15px;
         margin-bottom: 15px;
     }
+
+
     .navbar .navbar-nav .open .dropdown-menu>.dropdown-header {
         border: 0;
         color: inherit;
@@ -4825,6 +4839,8 @@ fieldset[disabled] .navbar .btn-link:focus {
         }
     */
     }
+
+	
     .navbar .navbar-brand {
         height: 50px;
         padding: 10px 15px;
@@ -6372,11 +6388,16 @@ footer .btn {
 
 /*          Changes for small display      */
 
-@media (max-width: 991px) {
+@media (max-width: 850px) {
     .sidebar {
         display: none;
         box-shadow: none;
     }
+			.main-panel>.content {
+		margin-top: 45px;
+		padding: 30px 15px;
+		min-height: calc(100% - 123px);
+	}
     .sidebar .sidebar-wrapper {
         padding-bottom: 60px;
     }
@@ -6471,7 +6492,7 @@ footer .btn {
         left: auto;
         z-index: 1032;
         visibility: visible;
-        background-color: #9A9A9A;
+        /* background-color: #9A9A9A; */
         overflow-y: visible;
         border-top: none;
         text-align: left;
@@ -6503,7 +6524,7 @@ footer .btn {
         height: 100%;
         width: 100%;
         position: absolute;
-        background-color: #282828;
+        /* background-color: #282828; */
         display: block;
         content: "";
         z-index: 1;
